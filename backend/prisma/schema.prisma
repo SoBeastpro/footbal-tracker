@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Роли пользователей
+enum Role {
+  user
+  manager
+  admin
+}
+
+// 1. ПОЛЬЗОВАТЕЛИ
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  role      Role      @default(user)
+  createdAt DateTime  @default(now())
+  
+  // Связь: Админ может создавать свои лиги
+  createdLeagues League[] 
+}
+
+// 2. ЛИГИ (ТОП-5 или кастомные от Админа)
+model League {
+  id        String   @id @default(cuid())
+  name      String   // Например: "Premier League"
+  logoUrl   String?
+  
+  // Флаг: true = создана админом, false = из внешнего API
+  isCustom  Boolean  @default(false)
+  
+  // Связь с админом, который её создал (может быть null для внешних лиг)
+  createdBy String?
+  creator   User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  
+  teams     Team[]
+  createdAt DateTime @default(now())
+}
+
+// 3. КОМАНДЫ
+model Team {
+  id        String   @id @default(cuid())
+  name      String   // Например: "Arsenal"
+  logoUrl   String?
+  
+  // Связь: Команда принадлежит одной лиге
+  leagueId  String
+  league    League   @relation(fields: [leagueId], references: [id])
+  
+  players   Player[]
+  standing  Standing?
+}
+
+// 4. ИГРОКИ (Состав команды)
+model Player {
+  id       String @id @default(cuid())
+  name     String
+  number   Int?
+  position String? // GK, DEF, MID, FWD
+  photoUrl String?
+  
+  // Связь: Игрок играет в одной команде
+  teamId   String
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+// 5. ТУРНИРНАЯ ТАБЛИЦА (Положение команды)
+model Standing {
+  id      String @id @default(cuid())
+  
+  // Связь: 1 запись таблицы = 1 команда
+  teamId  String @unique 
+  team    Team   @relation(fields: [teamId], references: [id])
+  
+  // Статистика
+  played  Int    @default(0) // Матчей сыграно
+  won     Int    @default(0) // Побед
+  drawn   Int    @default(0) // Ничьих
+  lost    Int    @default(0) // Поражений
+  gf      Int    @default(0) // Забито (Goals For)
+  ga      Int    @default(0) // Пропущено (Goals Against)
+  points  Int    @default(0) // Очки
+}
