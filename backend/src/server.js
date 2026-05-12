@@ -21,6 +21,8 @@ app.use('/api/leagues', leaguesRoutes);
 const teamsRoutes = require('./routes/teams');
 app.use('/api/teams', teamsRoutes);
 
+const playersRoutes = require('./routes/players');
+app.use('/api/players', playersRoutes);
 
 app.use(errorHandler);
 app.listen(PORT, () => {
