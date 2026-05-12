@@ -29,7 +29,7 @@ model User {
 // 2. ЛИГИ (ТОП-5 или кастомные от Админа)
 model League {
   id        String   @id @default(cuid())
-  name      String   // Например: "Premier League"
+  name      String   @unique// Например: "Premier League"
   logoUrl   String?
   
   // Флаг: true = создана админом, false = из внешнего API
@@ -46,7 +46,7 @@ model League {
 // 3. КОМАНДЫ
 model Team {
   id        String   @id @default(cuid())
-  name      String   // Например: "Arsenal"
+  name      String   @unique// Например: "Arsenal"
   logoUrl   String?
   
   // Связь: Команда принадлежит одной лиге

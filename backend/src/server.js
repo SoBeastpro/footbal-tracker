@@ -17,6 +17,11 @@ app.use('/api/auth', authRoutes);                  // Запросы идут н
 
 const leaguesRoutes = require('./routes/leagues');
 app.use('/api/leagues', leaguesRoutes);
+
+const teamsRoutes = require('./routes/teams');
+app.use('/api/teams', teamsRoutes);
+
+
 app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

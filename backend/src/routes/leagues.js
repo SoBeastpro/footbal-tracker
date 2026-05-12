@@ -2,8 +2,8 @@ const { Router } = require('express');
 const { PrismaClient } = require('@prisma/client');
 
 const auth = require('../middleware/auth');
-const requireRole = require('../middleware/roleCheck'); // или как ты назвал
-const validate = require('../middleware/validate'); // твоя обертка над Zod
+const requireRole = require('../middleware/roleCheck');
+const validate = require('../middleware/validate');
 const { createLeagueSchema } = require('../validators/league');
 
 const router = Router();
@@ -39,6 +39,9 @@ router.post('/', auth, requireRole('admin'), validate(createLeagueSchema), async
         
         res.status(201).json(newLeague);
     }catch (err){
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Лига с таким названием уже существует' });
+        }
         console.error(err);
         res.status(500).json({ error: 'Ошибка при создании лиги' });
     }
