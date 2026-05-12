@@ -2,21 +2,17 @@ const { Router } = require('express');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const validate = require('../middleware/validate');
+const { registerSchema, loginSchema } = require('../validators/auth');
 
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('register', async (req,res) => {
+router.post('/register', validate(registerSchema), async (req,res) => {
     try{
         const {email, password} = req.body;
 
-        if (!email || !password){
-            return res.status(400).json({error: 'Нужны email и пароль'});
-        }
-
-        const existingUser = await prisma.user.findUnique({
-            where: {email}
-        });
+        const existingUser = await prisma.user.findUnique({where: {email}});
         if (existingUser) {
             return res.status(400).json({error: 'Пользователь уже зарегестрирован'});
         }
@@ -43,17 +39,13 @@ router.post('register', async (req,res) => {
     }
 })
 
-router.post('/login', async (res,req) => {
+router.post('/login', validate(loginSchema), async (req,res) => {
     try {
-        const {email,password} = req.body;
+        const {email,password} = req.body || {};
 
-        const user = prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: {email}
         });
-
-        if (!user){
-            return res.status(401).json({error: 'Неверный email или пароль'})
-        }
         
         const isPasswordValid = await bcrypt.compare(password,user.password);
 
