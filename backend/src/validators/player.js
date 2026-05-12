@@ -3,7 +3,7 @@ const {z} = require('zod');
 exports.createPlayerSchema = z.object({
     name: z.string().min(2, "Имя игрока слишком короткое"),
     position: z.string().optional(),
-    number: z.number().Int().positive().optional(),
+    number: z.number().int().positive().optional(),
     teamId: z.string().min(1, "ID команды обязателен")
 })
 

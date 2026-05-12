@@ -39,8 +39,10 @@ model League {
   createdBy String?
   creator   User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
-  teams     Team[]
-  createdAt DateTime @default(now())
+  teams Team[]
+
+  standings Standing[]
+  createdAt DateTime   @default(now())
 }
 
 // 3. КОМАНДЫ
@@ -61,15 +63,16 @@ model Team {
 
 // 4. ИГРОКИ (Состав команды)
 model Player {
-  id       String  @id @default(cuid())
-  name     String
-  number   Int?
-  position String? // GK, DEF, MID, FWD
-  photoUrl String?
+  id        String   @id @default(cuid())
+  name      String
+  number    Int?
+  position  String?
+  photoUrl  String?
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  // Связь: Игрок играет в одной команде
-  teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  @@unique([teamId, number])
 }
 
 // 5. ТУРНИРНАЯ ТАБЛИЦА (Положение команды)
@@ -78,14 +81,21 @@ model Standing {
 
   // Связь: 1 запись таблицы = 1 команда
   teamId String @unique
-  team   Team   @relation(fields: [teamId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  leagueId String
+  league   League @relation(fields: [leagueId], references: [id])
 
   // Статистика
-  played Int @default(0) // Матчей сыграно
-  won    Int @default(0) // Побед
-  drawn  Int @default(0) // Ничьих
-  lost   Int @default(0) // Поражений
-  gf     Int @default(0) // Забито (Goals For)
-  ga     Int @default(0) // Пропущено (Goals Against)
+  played         Int @default(0) // Матчей сыграно
+  wins           Int @default(0) // Побед
+  draws          Int @default(0) // Ничьих
+  losses         Int @default(0) // Поражений
+  goalsFor       Int @default(0) // Забито (Goals For)
+  goalsAgainst   Int @default(0) // Пропущено (Goals Against)
+  goalDifference Int @default(0) // GD = GF - GA
+
   points Int @default(0) // Очки
+
+  createdAt DateTime @default(now())
 }

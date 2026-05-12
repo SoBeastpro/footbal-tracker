@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roleCheck');
 const validate = require('../middleware/validate');
 const { createPlayerSchema } = require('../validators/player');
+const { updatePlayerSchema } = require('../validators/player');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -41,7 +42,7 @@ router.post('/', auth, requireRole('admin','manager'), validate(createPlayerSche
             return res.status(400).json({ error: 'Команда не найдена' });
         }
 
-        const newPlayer = prisma.player.create({
+        const newPlayer = await prisma.player.create({
             data:{
                 name,
                 position: position||null,
