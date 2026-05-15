@@ -7,3 +7,8 @@ exports.createMatchSchema = z.object({
     date: z.string().datetime("Некорректный формат даты"),
     status: z.enum(['SCHEDULED', 'LIVE', 'FINISHED', 'CANCELLED'])
 })
+
+exports.updateScoreSchema = z.object({
+  homeScore: z.number().int().min(0, "Счёт не может быть отрицательным"),
+  awayScore: z.number().int().min(0, "Счёт не может быть отрицательным"),
+});

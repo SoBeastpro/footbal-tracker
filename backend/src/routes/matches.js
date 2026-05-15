@@ -4,6 +4,8 @@ const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roleCheck');
 const validate = require('../middleware/validate');
 const { createMatchSchema } = require('../validators/match');
+const { updateStandingSchema } = require('../validators/standings');
+const { updateScoreSchema} = require('../validators/match');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -68,6 +70,81 @@ router.post('/',auth, requireRole('admin','manager'), validate(createMatchSchema
     }catch(err){
         console.error(err);
         res.status(500).json({ error: 'Ошибка при создании матча' });
+    }
+})
+
+async function recalculateTeamStanding(teamId, leagueId) {
+    const matches = await prisma.match.findMany({
+        where:{
+            league,
+            status:'FINISHED',
+            OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }]
+        }
+    });
+
+    let wins = 0, losses = 0, draws = 0, gf = 0, ga = 0;
+
+    for (const m in matches){
+        const isHome = m.homeTeamId === teamId;
+        const teamGoals = isHome ? m.homeScore : m.awayScore;
+        const oppGoals = isHome ? m.awayScore : m.homeScore;
+
+        gf += teamGoals;
+        ga += oppGoals
+
+        if (teamGoals > oppGoals) wins++;
+        else if (teamGoals === oppGoals) draws++;
+        else losses++;
+    }
+
+    await prisma.standing.upsert({
+    where: { teamId },
+    update: {
+      wins, draws, losses,
+      goalsFor: gf, goalsAgainst: ga,
+      goalDifference: gf - ga,
+      points: wins * 3 + draws,
+      played: wins + draws + losses
+    },
+    create: {
+      teamId, leagueId,
+      wins, draws, losses,
+      goalsFor: gf, goalsAgainst: ga,
+      goalDifference: gf - ga,
+      points: wins * 3 + draws,
+      played: wins + draws + losses
+    }
+  });
+}
+
+router.patch('/', auth, requireRole('admin', 'manager'), validate(updateScoreSchema), async (req, res) =>{
+    try{
+        const {id} = req.params;
+        const {homeScore, awayScore} = req.body;
+
+        const match = await prisma.match.findUnique({
+            where: {id},
+            include:{
+                homeTeam: true, awayTeam:true
+            }
+        })
+        if (!match){
+            return res.status(404).json({ error: 'Матч не найден' });
+        }
+        const updatedMatch = await prisma.match.update({
+            where: {id},
+            data: {homeScore,awayScore,status:"FINISHED"}
+        })
+        await recalculateTeamStanding(match.homeTeamId, match.leagueId);
+        await recalculateTeamStanding(match.awayTeamId, match.leagueId);
+
+         res.json({ 
+            match: updatedMatch, 
+            message: 'Счёт обновлён. Турнирные таблицы для обеих команд пересчитаны.' 
+        });
+    }  catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Ошибка при обновлении счёта' });
     }
 })
 
