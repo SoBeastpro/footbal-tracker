@@ -27,6 +27,9 @@ app.use('/api/player', playersRoutes);
 const standingsRoutes = require('./routes/standings');
 app.use('/api/standings', standingsRoutes);
 
+const matchesRoutes = require('./routes/matches');
+app.use('/api/matches', matchesRoutes);
+
 app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

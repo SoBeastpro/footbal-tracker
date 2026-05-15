@@ -6,5 +6,5 @@ exports.updateStandingSchema = z.object({
   losses: z.number().int().min(0),
   goalsFor: z.number().int().min(0),
   goalsAgainst: z.number().int().min(0),
-  leagueId: z.string().optional() // ← добавлено
+  leagueId: z.string().optional()
 });

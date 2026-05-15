@@ -14,6 +14,13 @@ enum Role {
   admin
 }
 
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
 // 1. ПОЛЬЗОВАТЕЛИ
 model User {
   id        String   @id @default(cuid())
@@ -40,8 +47,9 @@ model League {
   creator   User?   @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
   teams Team[]
-
   standings Standing[]
+  matches   Match[]
+  
   createdAt DateTime   @default(now())
 }
 
@@ -57,6 +65,9 @@ model Team {
   standings Standing[]
   players   Player[]
   createdAt DateTime   @default(now())
+
+  homeMatches Match[] @relation("HomeMatches")
+  awayMatches Match[] @relation("AwayMatches")
 
   @@unique([name, leagueId])
 }
@@ -98,4 +109,26 @@ model Standing {
   points Int @default(0) // Очки
 
   createdAt DateTime @default(now())
+}
+
+model Match {
+  id        String      @id @default(cuid())
+  
+  homeTeamId String
+  awayTeamId String
+  
+  // Отношения к командам (множественные связи)
+  homeTeam  Team        @relation("HomeMatches", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam  Team        @relation("AwayMatches", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  
+  leagueId  String
+  league    League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  homeScore Int?        @default(0)
+  awayScore Int?        @default(0)
+  
+  status    MatchStatus @default(SCHEDULED)
+  date      DateTime
+  
+  createdAt DateTime    @default(now())
 }
