@@ -8,9 +8,15 @@ export const useAuth = create((set) => ({
 
   login: async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
+    
+    const normalizedUser = {
+      ...data.user,
+      role: data.user.role?.toUpperCase() || 'USER'
+    };
+    
     localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    set({ user: data.user, token: data.token, isAuthenticated: true });
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
+    set({ user: normalizedUser, token: data.token, isAuthenticated: true });
     return data;
   },
 
@@ -24,4 +30,4 @@ export const useAuth = create((set) => ({
     localStorage.removeItem('user');
     set({ user: null, token: null, isAuthenticated: false });
   },
-}));
+}))
