@@ -108,4 +108,22 @@ router.put('/:id',
   }
 );
 
+router.delete('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const player = await prisma.player.findUnique({ where: { id } });
+    if (!player) {
+      return res.status(404).json({ error: 'Игрок не найден' });
+    }
+
+    await prisma.player.delete({ where: { id } });
+    
+    res.json({ message: 'Игрок успешно удалён из состава' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка при удалении игрока' });
+  }
+});
+
 module.exports = router;

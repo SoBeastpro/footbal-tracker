@@ -17,7 +17,9 @@ router.get('/', async(req,res) => {
                 name:true,
                 logoUrl:true,
                 league:{
-                    id:true, name:true,
+                    select:{
+                        id:true, name:true,
+                    }
                 }
             }
         });

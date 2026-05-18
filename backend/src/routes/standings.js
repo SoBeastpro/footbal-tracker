@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roleCheck');
 const validate = require('../middleware/validate');
 const { updateStandingSchema } = require('../validators/standings');
+const { syncCompetitions, pollLiveMatches } = require('../services/liveSync');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -32,7 +33,7 @@ router.get('/', async (req, res) => {
         { points: 'desc' },           // 1. Очки (по убыванию)
         { goalDifference: 'desc' },   // 2. Разница мячей
         { goalsFor: 'desc' },         // 3. Забитые голы
-        { wins: 'desc' }              // 4. Победы (дополнительный критерий)
+        { wins: 'desc' }              // 4. Победы 
       ]
     });
 
@@ -94,5 +95,30 @@ router.put('/:teamId',
     }
   }
 );
+
+router.post('/sync', auth, requireRole('admin'), async (req, res) => {
+  try {
+    res.json({ message: 'Синхронизация запущена в фоне. Смотри консоль сервера.' });
+
+    syncCompetitions().catch(err => {
+      console.error('Ошибка фоновой синхронизации:', err.message);
+    });
+
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Ошибка запуска синхронизации' });
+    }
+  }
+});
+
+router.post('/sync/live', auth, requireRole('admin'), async (req, res) => {
+  try {
+    res.json({ message: 'Проверка LIVE-матчей запущена.' });
+    await pollLiveMatches();
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
 
 module.exports = router;

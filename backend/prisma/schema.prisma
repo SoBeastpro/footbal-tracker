@@ -17,8 +17,10 @@ enum Role {
 enum MatchStatus {
   SCHEDULED
   LIVE
+  HALFTIME
   FINISHED
   CANCELLED
+  POSTPONED
 }
 
 // 1. ПОЛЬЗОВАТЕЛИ
@@ -41,6 +43,7 @@ model League {
 
   // Флаг: true = создана админом, false = из внешнего API
   isCustom Boolean @default(false)
+  externalId String?  @unique // ID из football-data.org (например, "PL")
 
   // Связь с админом, который её создал (может быть null для внешних лиг)
   createdBy String?
@@ -56,12 +59,14 @@ model League {
 // 3. КОМАНДЫ
 model Team {
   id      String  @id @default(cuid())
-  name    String  @unique // Например: "Arsenal"
+  name    String  
   logoUrl String?
 
   // Связь: Команда принадлежит одной лиге
   leagueId  String
-  league    League     @relation(fields: [leagueId], references: [id])
+  league    League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  externalId String?   @unique
   standings Standing[]
   players   Player[]
   createdAt DateTime   @default(now())
@@ -113,6 +118,7 @@ model Standing {
 
 model Match {
   id        String      @id @default(cuid())
+  externalId String?    @unique
   
   homeTeamId String
   awayTeamId String
@@ -129,6 +135,8 @@ model Match {
   
   status    MatchStatus @default(SCHEDULED)
   date      DateTime
-  
+
+  stage     String? 
+
   createdAt DateTime    @default(now())
 }

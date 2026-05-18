@@ -30,6 +30,11 @@ app.use('/api/standings', standingsRoutes);
 const matchesRoutes = require('./routes/matches');
 app.use('/api/matches', matchesRoutes);
 
+const { pollLiveMatches } = require('./services/liveSync');
+setInterval(pollLiveMatches, 3 * 60 * 1000);
+setTimeout(pollLiveMatches, 10000);
+console.log('Live sync started (polling every 3 minutes)');
+
 app.use(errorHandler);
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

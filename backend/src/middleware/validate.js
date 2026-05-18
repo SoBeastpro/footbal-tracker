@@ -11,7 +11,6 @@ module.exports = (schema) => {
             });
         }
         req.body = result.data;
-
         next();
     };
 };

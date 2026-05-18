@@ -5,7 +5,8 @@ exports.createMatchSchema = z.object({
     awayTeamId: z.string().min('1',"ID гостевой команды обязателен"),
     leagueId: z.string().min('1',"ID лиги обязателен"),
     date: z.string().datetime("Некорректный формат даты"),
-    status: z.enum(['SCHEDULED', 'LIVE', 'FINISHED', 'CANCELLED'])
+    status: z.enum(['SCHEDULED', 'LIVE', 'FINISHED', 'CANCELLED']),
+    stage: z.string().optional()
 })
 
 exports.updateScoreSchema = z.object({

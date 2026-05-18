@@ -3,23 +3,22 @@ const { PrismaClient } = require('@prisma/client');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roleCheck');
 const validate = require('../middleware/validate');
-const { createMatchSchema } = require('../validators/match');
 const { updateStandingSchema } = require('../validators/standings');
-const { updateScoreSchema} = require('../validators/match');
+const { createMatchSchema, updateScoreSchema } = require('../validators/match');
 
 const router = Router();
 const prisma = new PrismaClient();
 
 router.get('/', async (req,res) =>{
     try{
-        const {leagueId, teamID, status} = req.query;
+        const {leagueId, teamId, status} = req.query;
         
         const where = {};
 
-        if(leagueId) where.leagueID = leagueID;
+        if(leagueId) where.leagueId = leagueId;
         if (teamID){
             where.OR = [
-                {homeTeamId: teamID},
+                {homeTeamId: teamId},
                 {awayTeamId: teamId}
             ];
         }
@@ -45,7 +44,7 @@ router.get('/', async (req,res) =>{
 
 router.post('/',auth, requireRole('admin','manager'), validate(createMatchSchema),async (req,res) =>{
     try{
-        const {homeTeamId, awayTeamId, leagueId, date, status} = req.body;
+        const {homeTeamId, awayTeamId, leagueId, date, status, stage} = req.body;
 
         if (homeTeamId === awayTeamId){
             return res.status(400).json({ error: 'Команда не может играть сама с собой' });
@@ -58,6 +57,7 @@ router.post('/',auth, requireRole('admin','manager'), validate(createMatchSchema
                 leagueId,
                 date: new Date(date),
                 status: status || "SCHEDULED",
+                stage: stage || 'Group Stage',
                 homeScore:0,
                 awayScore:0
             },
@@ -76,7 +76,7 @@ router.post('/',auth, requireRole('admin','manager'), validate(createMatchSchema
 async function recalculateTeamStanding(teamId, leagueId) {
     const matches = await prisma.match.findMany({
         where:{
-            league,
+            leagueId,
             status:'FINISHED',
             OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }]
         }
@@ -84,7 +84,7 @@ async function recalculateTeamStanding(teamId, leagueId) {
 
     let wins = 0, losses = 0, draws = 0, gf = 0, ga = 0;
 
-    for (const m in matches){
+    for (const m of matches){
         const isHome = m.homeTeamId === teamId;
         const teamGoals = isHome ? m.homeScore : m.awayScore;
         const oppGoals = isHome ? m.awayScore : m.homeScore;
@@ -117,7 +117,7 @@ async function recalculateTeamStanding(teamId, leagueId) {
   });
 }
 
-router.patch('/', auth, requireRole('admin', 'manager'), validate(updateScoreSchema), async (req, res) =>{
+router.patch('/:id/score', auth, requireRole('admin', 'manager'), validate(updateScoreSchema), async (req, res) =>{
     try{
         const {id} = req.params;
         const {homeScore, awayScore} = req.body;
