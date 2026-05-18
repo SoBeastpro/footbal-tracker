@@ -9,6 +9,26 @@ const { createMatchSchema, updateScoreSchema } = require('../validators/match');
 const router = Router();
 const prisma = new PrismaClient();
 
+/**
+ * @swagger
+ * /api/matches:
+ *   get:
+ *     summary: Получить список матчей
+ *     tags: [Matches]
+ *     parameters:
+ *       - in: query
+ *         name: leagueId
+ *         schema: { type: string }
+ *       - in: query
+ *         name: teamId
+ *         schema: { type: string }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [SCHEDULED, LIVE, FINISHED] }
+ *     responses:
+ *       200:
+ *         description: Массив матчей
+ */
 router.get('/', async (req,res) =>{
     try{
         const {leagueId, teamId, status} = req.query;
@@ -42,6 +62,33 @@ router.get('/', async (req,res) =>{
     }
 })
 
+/**
+ * @swagger
+ * /api/matches:
+ *   post:
+ *     summary: Создать матч (Admin/Manager)
+ *     tags: [Matches]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [homeTeamId, awayTeamId, leagueId, date]
+ *             properties:
+ *               homeTeamId: { type: string }
+ *               awayTeamId: { type: string }
+ *               leagueId: { type: string }
+ *               date: { type: string, format: date-time, example: "2025-05-20T19:00:00Z" }
+ *               stage: { type: string, example: "Group Stage" }
+ *     responses:
+ *       201:
+ *         description: Матч создан
+ *       400:
+ *         description: Команда не может играть сама с собой
+ */
 router.post('/',auth, requireRole('admin','manager'), validate(createMatchSchema),async (req,res) =>{
     try{
         const {homeTeamId, awayTeamId, leagueId, date, status, stage} = req.body;
@@ -117,6 +164,43 @@ async function recalculateTeamStanding(teamId, leagueId) {
   });
 }
 
+/**
+ * @swagger
+ * /api/matches/{id}/score:
+ *   patch:
+ *     summary: Обновить счёт матча (автопересчёт таблицы)
+ *     description: Изменяет статус на FINISHED и автоматически пересчитывает Standing
+ *     tags: [Matches]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - homeScore
+ *               - awayScore
+ *             properties:
+ *               homeScore:
+ *                 type: integer
+ *                 example: 2
+ *               awayScore:
+ *                 type: integer
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: Счёт обновлён, таблица пересчитана
+ *       404:
+ *         description: Матч не найден
+ */
 router.patch('/:id/score', auth, requireRole('admin', 'manager'), validate(updateScoreSchema), async (req, res) =>{
     try{
         const {id} = req.params;

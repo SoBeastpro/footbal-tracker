@@ -9,7 +9,24 @@ const { syncCompetitions, pollLiveMatches } = require('../services/liveSync');
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET: Получить турнирную таблицу конкретной лиги
+/**
+ * @swagger
+ * /api/standings:
+ *   get:
+ *     summary: Получить турнирную таблицу лиги
+ *     tags: [Standings]
+ *     parameters:
+ *       - in: query
+ *         name: leagueId
+ *         required: true
+ *         schema: { type: string }
+ *         description: ID лиги для вывода таблицы
+ *     responses:
+ *       200:
+ *         description: Отсортированная таблица (по очкам, разнице мячей)
+ *       400:
+ *         description: Параметр leagueId обязателен
+ */
 router.get('/', async (req, res) => {
   try {
     const { leagueId } = req.query;
@@ -96,6 +113,21 @@ router.put('/:teamId',
   }
 );
 
+/**
+ * @swagger
+ * /api/standings/sync:
+ *   post:
+ *     summary: Синхронизация с football-data.org
+ *     description: Загружает ТОП-лиги, команды и матчи. Пересчитывает таблицы для FINISHED матчей.
+ *     tags: [Standings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Синхронизация запущена в фоне
+ *       403:
+ *         description: Требуется роль Admin
+ */
 router.post('/sync', auth, requireRole('admin'), async (req, res) => {
   try {
     res.json({ message: 'Синхронизация запущена в фоне. Смотри консоль сервера.' });

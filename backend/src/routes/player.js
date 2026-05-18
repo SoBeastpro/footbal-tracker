@@ -10,6 +10,21 @@ const { updatePlayerSchema } = require('../validators/player');
 const router = Router();
 const prisma = new PrismaClient();
 
+/**
+ * @swagger
+ * /api/players:
+ *   get:
+ *     summary: Получить список игроков
+ *     tags: [Players]
+ *     parameters:
+ *       - in: query
+ *         name: teamId
+ *         schema: { type: string }
+ *         description: Фильтр по ID команды
+ *     responses:
+ *       200:
+ *         description: Массив игроков
+ */
 router.get('/',async(req, res) =>{
     try{
         const {teamId} = req.query;
@@ -31,7 +46,32 @@ router.get('/',async(req, res) =>{
         res.status(500).json({ error: 'Ошибка при получении игроков' });
     }
 });
-
+/**
+ * @swagger
+ * /api/players:
+ *   post:
+ *     summary: Добавить игрока в состав (Admin/Manager)
+ *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, teamId]
+ *             properties:
+ *               name: { type: string, example: "Артем Дзюба" }
+ *               teamId: { type: string }
+ *               number: { type: integer, example: 22 }
+ *               position: { type: string, example: "Нападающий" }
+ *     responses:
+ *       201:
+ *         description: Игрок добавлен
+ *       409:
+ *         description: Номер уже занят в этой команде
+ */
 router.post('/', auth, requireRole('admin','manager'), validate(createPlayerSchema), async(req,res) =>{
     try{
         const { name, position, number, teamId } = req.body;
@@ -67,7 +107,6 @@ router.post('/', auth, requireRole('admin','manager'), validate(createPlayerSche
     }
 })
 
-// PUT: Обновить данные игрока (номер, позиция, имя)
 router.put('/:id', 
   auth, 
   requireRole('admin', 'manager'), 
@@ -108,6 +147,25 @@ router.put('/:id',
   }
 );
 
+/**
+ * @swagger
+ * /api/players/{id}:
+ *   delete:
+ *     summary: Удалить игрока из состава (Admin/Manager)
+ *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Игрок удалён
+ *       404:
+ *         description: Игрок не найден
+ */
 router.delete('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
   try {
     const { id } = req.params;

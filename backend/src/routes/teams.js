@@ -9,6 +9,21 @@ const { createTeamSchema } = require('../validators/team');
 const router = Router();
 const prisma = new PrismaClient();
 
+/**
+ * @swagger
+ * /api/teams:
+ *   get:
+ *     summary: Получить список команд
+ *     tags: [Teams]
+ *     parameters:
+ *       - in: query
+ *         name: leagueId
+ *         schema: { type: string }
+ *         description: Фильтр по ID лиги
+ *     responses:
+ *       200:
+ *         description: Массив команд
+ */
 router.get('/', async(req,res) => {
     try{
         const teams = await prisma.team.findMany({
@@ -29,7 +44,31 @@ router.get('/', async(req,res) => {
         res.status(500).json('Ошибка при получении команд')
     }
 })
-
+/**
+ * @swagger
+ * /api/teams:
+ *   post:
+ *     summary: Добавить команду в лигу (Admin/Manager)
+ *     tags: [Teams]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, leagueId]
+ *             properties:
+ *               name: { type: string, example: "ФК Зенит" }
+ *               leagueId: { type: string }
+ *               logoUrl: { type: string }
+ *     responses:
+ *       201:
+ *         description: Команда создана
+ *       400:
+ *         description: Ошибка валидации или дубль названия
+ */
 router.post('/', auth, requireRole('admin', 'manager'), validate(createTeamSchema), async(req,res) =>{
     try{
         const {name, logoUrl, leagueId} = req.body;
@@ -62,6 +101,25 @@ router.post('/', auth, requireRole('admin', 'manager'), validate(createTeamSchem
     }
 });
 
+/**
+ * @swagger
+ * /api/teams/{id}:
+ *   delete:
+ *     summary: Удалить команду (Admin/Manager)
+ *     tags: [Teams]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Команда удалена
+ *       404:
+ *         description: Команда не найдена
+ */
 router.delete('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
     try {
         const { id } = req.params;
