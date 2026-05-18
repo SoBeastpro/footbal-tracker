@@ -28,6 +28,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  name      String?  
   role      Role     @default(user)
   createdAt DateTime @default(now())
 
@@ -100,7 +101,7 @@ model Standing {
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   leagueId String
-  league   League @relation(fields: [leagueId], references: [id])
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   // Статистика
   played         Int @default(0) // Матчей сыграно

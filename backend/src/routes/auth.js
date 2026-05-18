@@ -22,11 +22,14 @@ router.post('/register', validate(registerSchema), async (req,res) => {
         const newUser = await prisma.user.create({
             data: {
                 email,
-                password:hashedPassword
+                password:hashedPassword,
+                name: name || null,
+                role: role || 'USER'
             },
             select:{
                 id:true,
                 email:true,
+                name:true,
                 role:true
             }
         });
@@ -38,7 +41,24 @@ router.post('/register', validate(registerSchema), async (req,res) => {
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 })
-
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Авторизация пользователя
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Успешный вход, возвращает JWT токен
+ *       401:
+ *         description: Неверный email или пароль
+ */
 router.post('/login', validate(loginSchema), async (req,res) => {
     try {
         const {email,password} = req.body || {};
@@ -60,6 +80,7 @@ router.post('/login', validate(loginSchema), async (req,res) => {
             {
                 id: user.id,
                 email:user.email,
+                name: user.name,
                 role: user.role
             }, 
             process.env.JWT_SECRET,
@@ -71,6 +92,7 @@ router.post('/login', validate(loginSchema), async (req,res) => {
             user: {
                 id: user.id,
                 email:user.email,
+                name: user.name,
                 role: user.role
             }
         });
