@@ -52,4 +52,20 @@ router.put('/:id', auth, requireRole('admin'), validate(createLeagueSchema), asy
   res.json({ message: 'Данные обновлены' });
 });
 
+router.delete('/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const league = await prisma.league.findUnique({ where: { id } });
+        if (!league) {
+            return res.status(404).json({ error: 'Лига не найдена' });
+        }
+        await prisma.league.delete({ where: { id } });
+    
+        res.json({ message: 'Лига и все связанные данные успешно удалены' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Ошибка при удалении лиги' });
+    }
+});
+
 module.exports = router;

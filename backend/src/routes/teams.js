@@ -62,4 +62,19 @@ router.post('/', auth, requireRole('admin', 'manager'), validate(createTeamSchem
     }
 });
 
+router.delete('/:id', auth, requireRole('admin', 'manager'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const team = await prisma.team.findUnique({ where: { id } });
+        if (!team) {
+            return res.status(404).json({ error: 'Команда не найдена' });
+        }
+        await prisma.team.delete({ where: { id } });
+        res.json({ message: 'Команда и связанные данные успешно удалены' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Ошибка при удалении команды' });
+    }
+});
+
 module.exports = router;
